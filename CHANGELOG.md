@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Weighted criterion decomposition.** `select` and `compare` accept a complete
+  `criterion_weights` mapping, and the new `swe_bench_logic` benchmark provides
+  a fairly weighted L1–L6 ablation for Issue #1 with a separate score cache.
+
 ## 0.2.0 — 2026-08-14
 
 - **DeepSeek verifier backend.** `deepseek-v4-flash` is now the default
