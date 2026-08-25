@@ -1,0 +1,41 @@
+# Run the test suite on every push and pull request.
+#
+# The matrix is the two ends of the supported range declared in
+# pyproject.toml (requires-python = ">=3.9"): 3.9 catches the syntax and
+# stdlib-API regressions that a newer interpreter hides, 3.12 catches the
+# deprecations 3.9 has not reached yet. The versions in between fail in the
+# same ways as one of the two ends.
+#
+# `filter: blob:none` keeps the ~350 MB of benchmark trajectories under data/
+# out of the checkout; the tests do not read them.
+
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install the package and its test extra
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+
+      - name: Run the test suite
+        run: python -m pytest tests/ -q
