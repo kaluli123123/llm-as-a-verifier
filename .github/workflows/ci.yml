@@ -6,8 +6,12 @@
 # deprecations 3.9 has not reached yet. The versions in between fail in the
 # same ways as one of the two ends.
 #
-# `filter: blob:none` keeps the ~350 MB of benchmark trajectories under data/
-# out of the checkout; the tests do not read them.
+# The checkout leaves out data/ — 348 MB of benchmark trajectories the tests
+# never read. Sparse checkout is what removes it: `filter: blob:none` only
+# skips historical blobs, and data/ arrived in a single commit, so the current
+# commit's copy would still be fetched to populate the working tree. Non-cone
+# mode is what makes the `!/data` negation work; actions/checkout applies
+# `blob:none` on its own whenever sparse-checkout is set.
 
 name: CI
 
@@ -27,7 +31,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/data
+          sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v5
         with:
