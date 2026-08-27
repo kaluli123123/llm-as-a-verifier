@@ -1,5 +1,12 @@
 # Run the test suite on every push and pull request.
 #
+# The push trigger covers every branch, not just main. Contributors work from
+# forks, where `pull_request` runs are hosted by the upstream repository and
+# stay queued until a maintainer approves them; a fork branch with no push
+# trigger of its own therefore gets no CI signal at all before review. The
+# cost of the wider trigger is that a branch pushed inside this repository
+# while it has an open pull request is tested twice, once per event.
+#
 # The matrix is the two ends of the supported range declared in
 # pyproject.toml (requires-python = ">=3.9"): 3.9 catches the syntax and
 # stdlib-API regressions that a newer interpreter hides, 3.12 catches the
@@ -17,8 +24,14 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["**"]
   pull_request:
+
+# A branch that is force-pushed or fixed up in quick succession only needs its
+# newest commit tested; the superseded runs are cancelled instead of finishing.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
