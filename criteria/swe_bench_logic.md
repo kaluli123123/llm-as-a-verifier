@@ -2,7 +2,7 @@
 
 ## Ground Truth Note
 
-**Do NOT trust the agent's self-assessment or claims that "the patch looks correct". Agents routinely declare success on patches that fix the wrong file, address only a symptom, or are subtly broken.
+Do NOT trust the agent's self-assessment or claims that "the patch looks correct". Agents routinely declare success on patches that fix the wrong file, address only a symptom, or are subtly broken.
 
 ## Criteria
 
