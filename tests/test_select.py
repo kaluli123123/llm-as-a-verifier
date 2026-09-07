@@ -27,14 +27,16 @@ def _stub_score(client, problem, trace_a, trace_b, criterion,
     return a / (a + b), b / (a + b)
 
 
-fgr.score_pair_criterion = _stub_score
-
-
 def _select(candidates, seed, cache_path=None):
-    return llm_verifier.select(
-        "task", candidates, criteria={"C": "does it solve the task?"},
-        seed=seed, n_evaluations=1, pivots=2, progress=False,
-        cache=cache_path, client=object())
+    real_score = fgr.score_pair_criterion
+    fgr.score_pair_criterion = _stub_score
+    try:
+        return llm_verifier.select(
+            "task", candidates, criteria={"C": "does it solve the task?"},
+            seed=seed, n_evaluations=1, pivots=2, progress=False,
+            cache=cache_path, client=object())
+    finally:
+        fgr.score_pair_criterion = real_score
 
 
 def test_a_cache_path_does_not_change_the_result():
