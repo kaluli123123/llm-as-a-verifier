@@ -35,7 +35,7 @@ from llm_verifier.fine_grained_reward import (
 from llm_verifier.progress import ProgressResult, ProgressTracker, track
 from llm_verifier.prompts import load_prompts, normalize_criteria
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "select",
