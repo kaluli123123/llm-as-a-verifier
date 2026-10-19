@@ -806,16 +806,16 @@ def _digest(text, memo=None):
 
 
 def _images_digest(images, memo=None):
-    """Fingerprint of the task-context images, which ride along in every
-    prompt. Raw bytes are hashed; paths and URLs are taken as written."""
+    """Fingerprint the image bytes actually sent to the verifier."""
     parts = []
     for image in as_image_list(images):
-        if isinstance(image, bytes):
-            parts.append(hashlib.sha256(image).hexdigest())
-        else:
-            parts.append(_digest(os.fspath(image)
-                                 if isinstance(image, os.PathLike)
-                                 else str(image), memo))
+        data, _ = load_image(image)
+        digest = memo.get(data) if memo is not None else None
+        if digest is None:
+            digest = hashlib.sha256(data).hexdigest()
+            if memo is not None:
+                memo[data] = digest
+        parts.append(digest)
     return "\x1f".join(parts)
 
 
@@ -908,11 +908,23 @@ def score_directed_pairs(lazy_client, tasks, needed_pairs, criteria,
             disk = json.load(f)
 
     digests = {}
+    image_inputs = {}
+
+    def images_for(trial):
+        # Pin mutable paths/URLs once, so the fingerprint and scorer see the
+        # same bytes without changing the caller's task records.
+        key = id(trial)
+        if key not in image_inputs:
+            image_inputs[key] = [
+                load_image(image)[0]
+                for image in as_image_list(trial.get("images"))
+            ]
+        return image_inputs[key]
 
     def fingerprint(trials, a, b, crit):
         return pair_fingerprint(
             trials[a]["problem"], trials[a]["trace"], trials[b]["trace"],
-            crit, ground_truth_note, model, trials[a].get("images"), digests)
+            crit, ground_truth_note, model, images_for(trials[a]), digests)
 
     # Disk keys carry the fingerprint; `directed_reward` looks entries up by
     # position. Translate the entries whose content matches what this call is
@@ -952,7 +964,7 @@ def score_directed_pairs(lazy_client, tasks, needed_pairs, criteria,
                         prefix = (task_name, sa, sb)
                         jobs.append((key, disk_cache_key(key, fp),
                                      trials[a]["problem"], ta, tb,
-                                     crit, trials[a].get("images"), swap,
+                                     crit, images_for(trials[a]), swap,
                                      prefix))
 
     log = print if progress else (lambda *a, **kw: None)

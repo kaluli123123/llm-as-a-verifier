@@ -125,3 +125,61 @@ def test_legacy_entries_without_a_fingerprint_are_ignored(tmp_path, scorer):
 
     assert len(scorer) == 1, "a legacy entry must not be replayed"
     assert results[legacy_key] == {"score_A": 2.0, "score_B": 3.0}
+
+
+@pytest.mark.parametrize("source", ["path", "url", "bytes"])
+def test_image_content_changes_invalidate_cache(tmp_path, monkeypatch,
+                                               scorer, source):
+    image = tmp_path / "context.png"
+    image.write_bytes(b"first image")
+    content = [b"first image"]
+    if source == "url":
+        from io import BytesIO
+
+        def urlopen(url):
+            return BytesIO(content[0])
+
+        monkeypatch.setattr("urllib.request.urlopen", urlopen)
+
+    tasks = _tasks("describe image", ["aa", "bbb"])
+
+    def set_images():
+        value = (image if source == "path" else
+                 "https://example.invalid/image.png" if source == "url" else
+                 content[0])
+        for trial in tasks["task"]:
+            trial["images"] = value
+        return value
+
+    original = set_images()
+    _score(tmp_path, tasks)
+    _score(tmp_path, tasks)
+    assert len(scorer) == 1, "unchanged image content must hit the cache"
+    assert tasks["task"][0]["images"] == original
+
+    content[0] = b"changed image content"
+    image.write_bytes(content[0])
+    set_images()
+    _score(tmp_path, tasks)
+    assert len(scorer) == 2, "changed image content must be scored again"
+
+
+def test_scoring_uses_the_same_image_snapshot_as_the_fingerprint(
+        tmp_path, monkeypatch):
+    image = tmp_path / "context.png"
+    image.write_bytes(b"first image")
+    tasks = _tasks("describe image", ["aa", "bbb"])
+    for trial in tasks["task"]:
+        trial["images"] = image
+    seen = []
+
+    def score(client, problem, trace_a, trace_b, crit, note, model,
+              images=None):
+        image.write_bytes(b"replaced after fingerprinting")
+        seen.append(fgr.load_image(fgr.as_image_list(images)[0])[0])
+        return .8, .2
+
+    monkeypatch.setattr(fgr, "score_pair_criterion", score)
+    _score(tmp_path, tasks)
+    assert seen == [b"first image"]
+    assert tasks["task"][0]["images"] == image

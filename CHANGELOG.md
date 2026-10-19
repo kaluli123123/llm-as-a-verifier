@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Bind cached image comparisons to the loaded image bytes rather than a
+  mutable file path or URL, and score the same snapshot used for the key.
+
 ## 0.2.0 — 2026-08-14
 
 - **DeepSeek verifier backend.** `deepseek-v4-flash` is now the default
