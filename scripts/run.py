@@ -107,7 +107,7 @@ def run_benchmark(cfg, pivots=None, n_evaluations=None, seed=None,
     """Score one benchmark end to end and return the metrics.
 
     Every argument except `cfg` overrides the benchmark's own setting, so a
-    caller can pin a configuration (see scripts/run_bo3.py / run_bo5.py).
+    caller can pin a configuration (see scripts/run_tb2.1_bo3.py / run_tb4.0_bo5.py).
     `n_trials` truncates each task to its first N trials (best-of-5 data ->
     best-of-3 run). Returns the keyword arguments `report` expects.
     """

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
-Reproduce the best-of-5 self-verification result.
+Reproduce the Terminal-Bench 4.0 best-of-3 result (deepseek-flash
+verifying Claude Code / Opus 5.5 rollouts).
 
-Runs the tournament on all 5 trials of each task with pivots=1 and K=2
-repeated verifications. Uses its own score cache (`<config cache>_bo5.json`)
-— never shared with the best-of-3 run — so the reported token usage is what 
-best-of-5 uses on its own.
+Runs the tournament on the first 3 trials of each task with pivots=1 and
+K=2 repeated verifications (3 ring + 3 pivot-round pairs per swing task).
+Uses its own score cache (`<config cache>_bo3.json`) — never shared with the
+best-of-5 run — so the reported token usage is what best-of-3 uses on its
+own.
 
 Usage:
-    python scripts/run_bo5.py                    # terminal_bench_2.1
-    python scripts/run_bo5.py swe_bench
+    python scripts/run_tb4.0_bo3.py              # terminal_bench_4.0
+    python scripts/run_tb4.0_bo3.py --seed 1     # another ring-pass seed
 """
 
 import argparse
@@ -28,8 +30,8 @@ from run import report, resolve_config, run_benchmark  # noqa: E402
 
 load_dotenv(ROOT_DIR)
 
-LABEL = "bo5"
-N_TRIALS = 5
+LABEL = "bo3"
+N_TRIALS = 3
 PIVOTS = 1
 N_EVALUATIONS = 2
 
@@ -38,8 +40,8 @@ def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("benchmark", nargs="?", default="terminal_bench_2.1",
-                        help="Benchmark name (default: terminal_bench_2.1)")
+    parser.add_argument("benchmark", nargs="?", default="terminal_bench_4.0",
+                        help="Benchmark name (default: terminal_bench_4.0)")
     parser.add_argument("--n-evaluations", type=int, default=N_EVALUATIONS,
                         help=f"repeated verifications K (default: "
                              f"{N_EVALUATIONS})")

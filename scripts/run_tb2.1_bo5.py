@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
-Reproduce the best-of-3 self-verification result.
+Reproduce the Terminal-Bench 2.1 best-of-5 self-verification result.
 
-Runs the tournament on the first 3 trials of each task with pivots=1 and
-K=2 repeated verifications (3 ring + 3 pivot-round pairs per swing task).
-Uses its own score cache (`<config cache>_bo3.json`) — never shared with the
-best-of-5 run — so the reported token usage is what best-of-3 uses on its
-own.
+Runs the tournament on all 5 trials of each task with pivots=1 and K=2
+repeated verifications. Uses its own score cache (`<config cache>_bo5.json`)
+— never shared with the best-of-3 run — so the reported token usage is what 
+best-of-5 uses on its own.
 
 Usage:
-    python scripts/run_bo3.py                    # terminal_bench_2.1
-    python scripts/run_bo3.py swe_bench
+    python scripts/run_tb2.1_bo5.py              # terminal_bench_2.1
+    python scripts/run_tb2.1_bo5.py swe_bench
 """
 
 import argparse
@@ -29,8 +28,8 @@ from run import report, resolve_config, run_benchmark  # noqa: E402
 
 load_dotenv(ROOT_DIR)
 
-LABEL = "bo3"
-N_TRIALS = 3
+LABEL = "bo5"
+N_TRIALS = 5
 PIVOTS = 1
 N_EVALUATIONS = 2
 

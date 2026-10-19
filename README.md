@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD001 MD041 -->
 <p align="center">
   <picture>
-    <img alt="LLM-as-a-Verifier" src="assets/logo.png" width=78%>
+    <img alt="LLM-as-a-Verifier" src="https://raw.githubusercontent.com/llm-as-a-verifier/llm-as-a-verifier/v0.3.0/assets/logo.png" width=78%>
   </picture>
 </p>
 
@@ -30,13 +30,20 @@ To install the latest from a clone:
 pip install -e .
 ```
 
-**What's new in 0.2.0** (full notes in [CHANGELOG.md](CHANGELOG.md)):
+**What's new in 0.3.0** (full notes in [CHANGELOG.md](https://github.com/llm-as-a-verifier/llm-as-a-verifier/blob/v0.3.0/CHANGELOG.md)):
 
-- Prefix-cache optimization: ~3.4× fewer uncached input tokens on
-  trajectory-heavy benchmarks
-- Terminal-Bench 2.1 [self-verification benchmark](#self-verification-terminal-bench-21)
-- `deepseek-v4-flash` verifier backend
-- Token accounting (`llm_verifier.token_usage()`)
+- Terminal-Bench 4.0 benchmark: `deepseek-flash` verifying Claude Code /
+  Opus 5.5 rollouts — [can a weaker model verify outputs from a stronger model?](#terminal-bench-40-can-a-weaker-model-verify-outputs-from-a-stronger-model)
+- LLM-as-a-Verifier V3: task-agnostic Terminal-Bench 4 criteria in `criteria/terminalbench4.md`
+- DeepSeek backend now calls `deepseek-flash` (DeepSeek V4.1 Flash), with
+  `DEEPSEEK_MAX_TOKENS` raised to 65536
+- Reproduction scripts renamed per benchmark: `run_tb2.1_bo{3,5}.py`,
+  `run_tb4.0_bo{3,5}.py`
+
+**0.2.0:** prefix-cache optimization (~3.4× fewer uncached input tokens),
+Terminal-Bench 2.1 [self-verification benchmark](#self-verification-terminal-bench-21),
+`deepseek-v4-flash` verifier backend, token accounting (`llm_verifier.token_usage()`)
+
 ---
 
 ## About
@@ -49,7 +56,7 @@ resulting fine-grained feedback can be used for test-time scaling, progress
 tracking, and reinforcement learning.
 
 <p align="center">
-  <img src="assets/llmoverview.png" alt="LLM-as-a-Verifier overview" width="100%">
+  <img src="https://raw.githubusercontent.com/llm-as-a-verifier/llm-as-a-verifier/v0.3.0/assets/llmoverview.png" alt="LLM-as-a-Verifier overview" width="100%">
 </p>
 
 ---
@@ -113,6 +120,28 @@ print(result.scores)  # progress after each step: [0.00106, 0.02417, 0.03143, 0.
 
 ---
 
+## Terminal-Bench 4.0: Can a weaker model verify outputs from a stronger model?
+
+On Terminal-Bench 4.0, we take Claude Opus 5.5 trajectories (66 tasks × 5
+trials; 64.8% Pass@1) and verify them with DeepSeek V4.1 Flash, a much smaller
+and cheaper model. Mean ± std over 3 seeds:
+
+| Config | Pass@1 | LLM-as-a-Verifier V3 | Oracle |
+|---|---|---|---|
+| Best-of-3 | 63.1% | **66.2% ± 1.7%** | 74.2% |
+| Best-of-5 | 64.8% | **69.2% ± 1.7%** | 78.8% |
+
+The weaker model lifts Opus 5.5 above its Pass@1 in both settings.
+
+Reproduce:
+
+```bash
+DEEPSEEK_EFFORT=high python scripts/run_tb4.0_bo3.py     # best-of-3
+DEEPSEEK_EFFORT=high python scripts/run_tb4.0_bo5.py     # best-of-5
+```
+
+---
+
 ## Self-Verification (Terminal Bench 2.1)
 
 Can a model verify its own rollouts? On Terminal-Bench 2.1 we generate 5
@@ -126,12 +155,14 @@ the verifier is judging its own model's work:
 | Best-of-5 | 78.7% | **88.0% ± 0.6%** | 96.6% |
 
 The trajectories ship in `data/terminal_bench_2.1_trajs/`; scoring only needs
-`DEEPSEEK_API_KEY` in `.env`. Each configuration has its own reproduction
-script:
+`DEEPSEEK_API_KEY` in `.env`. DeepSeek's `deepseek-flash` endpoint now serves
+V4.1 Flash, so a re-run verifies these `deepseek-v4-flash` rollouts with the
+newer model rather than with the generator itself. Each configuration has its
+own reproduction script:
 
 ```bash
-python scripts/run_bo3.py                    # best-of-3
-python scripts/run_bo5.py                    # best-of-5
+python scripts/run_tb2.1_bo3.py              # best-of-3
+python scripts/run_tb2.1_bo5.py              # best-of-5
 ```
 
 ---
@@ -204,7 +235,7 @@ Use the verifier for your own task in three steps — Claude Code does the rest
 
 1. **Add your data.** Copy your agent trajectories into `data/task_name_trajs/`.
 2. **Update naming.** Replace every `task_name` in
-   [`add_new_benchmark.md`](add_new_benchmark.md) with the name of your task.
+   [`add_new_benchmark.md`](https://github.com/llm-as-a-verifier/llm-as-a-verifier/blob/v0.3.0/add_new_benchmark.md) with the name of your task.
 3. **Spin up Claude Code in this repo** (or Codex, or whatever you like — with
    permissions disabled) and paste the contents of `add_new_benchmark.md` to let
    it run.
@@ -221,7 +252,7 @@ python scripts/terminal_bench_progress.py    # scores both runs then plots
 ```
 
 <p align="center">
-  <img src="assets/progress_pytorch_model_cli.png" alt="Progress curves for two pytorch-model-cli runs" width="100%">
+  <img src="https://raw.githubusercontent.com/llm-as-a-verifier/llm-as-a-verifier/v0.3.0/assets/progress_pytorch_model_cli.png" alt="Progress curves for two pytorch-model-cli runs" width="100%">
 </p>
 
 
@@ -311,12 +342,15 @@ configuration and setup details.
 .
 ├── scripts/                     # command-line entry points
 │   ├── run.py                   #   registry-driven benchmark launcher
-│   ├── run_bo3.py               #   reproduce the best-of-3 self-verification run
-│   ├── run_bo5.py               #   reproduce the best-of-5 self-verification run
+│   ├── run_tb2.1_bo3.py         #   Terminal-Bench 2.1 best-of-3 self-verification
+│   ├── run_tb2.1_bo5.py         #   Terminal-Bench 2.1 best-of-5 self-verification
+│   ├── run_tb4.0_bo3.py         #   Terminal-Bench 4.0 best-of-3 (deepseek verifies Opus 5.5)
+│   ├── run_tb4.0_bo5.py         #   Terminal-Bench 4.0 best-of-5 (deepseek verifies Opus 5.5)
 │   └── terminal_bench_progress.py  # re-score + plot the progress-tracking example
 ├── criteria/                    # verifier criteria + ground-truth notes
 │   ├── TEMPLATE.md              #   copy this to write your own
 │   ├── terminal_bench.md
+│   ├── terminalbench4.md
 │   ├── swe_bench.md
 │   └── medagentbench.md
 ├── llm_verifier/                # the reusable framework (import llm_verifier)
@@ -362,7 +396,7 @@ This lives in `llm_verifier/fine_grained_reward.py`.
 ### Probabilistic Pivot Tournament
 
 <p align="center">
-  <img src="assets/pivot_tournament.png" alt="Probabilistic Pivot Tournament" width="100%">
+  <img src="https://raw.githubusercontent.com/llm-as-a-verifier/llm-as-a-verifier/v0.3.0/assets/pivot_tournament.png" alt="Probabilistic Pivot Tournament" width="100%">
 </p>
 
 To pick the best of `N` candidate trajectories, a round-robin tournament scores

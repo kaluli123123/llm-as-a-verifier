@@ -25,7 +25,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DEFAULT_MODEL = "gemini-2.5-flash"
-DEEPSEEK_MODEL = "deepseek-v4-flash"
+# DeepSeek's rolling alias endpoint: currently serves DeepSeek V4.1 Flash.
+DEEPSEEK_MODEL = "deepseek-flash"
 
 DEFAULT_MAX_WORKERS = 50
 DEEPSEEK_MAX_WORKERS = 500
@@ -36,7 +37,7 @@ DEEPSEEK_MAX_WORKERS = 500
 # "max" accuracy on Terminal-Bench 2.1 at ~17% fewer output tokens.
 DEEPSEEK_THINKING = {"type": "enabled"}
 DEEPSEEK_REASONING_EFFORT = "high"
-DEEPSEEK_MAX_TOKENS = 32768
+DEEPSEEK_MAX_TOKENS = 65536
 
 
 def deepseek_reasoning_params():
@@ -565,12 +566,16 @@ def call_deepseek(client, prompt, model=DEFAULT_MODEL, top_logprobs=20,
                 alts = [(pos.token, pos.logprob)]
             position_logprobs.append(alts)
     if not position_logprobs:
-        # Reasoning consumed the whole budget: no score distribution to read.
+        # No score distribution to read: either reasoning consumed the whole
+        # budget, or the model stopped without emitting an answer.
+        if choice.finish_reason == "length":
+            raise RuntimeError(
+                "DeepSeek returned no answer logprobs (finish_reason='length', "
+                f"reasoning consumed the {max_tokens}-token budget); "
+                "raise DEEPSEEK_MAX_TOKENS or lower DEEPSEEK_EFFORT")
         raise RuntimeError(
             "DeepSeek returned no answer logprobs "
-            f"(finish_reason={choice.finish_reason!r}, "
-            f"reasoning consumed the {max_tokens}-token budget); "
-            "raise DEEPSEEK_MAX_TOKENS or lower DEEPSEEK_EFFORT")
+            f"(finish_reason={choice.finish_reason!r}, no answer emitted)")
     return text, tokens, position_logprobs
 
 

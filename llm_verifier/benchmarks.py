@@ -48,6 +48,19 @@ BENCHMARKS = {
         n_evaluations=2,
         max_workers=2000,
     ),
+    "terminal_bench_4.0": Benchmark(
+        name="TERMINAL-BENCH 4.0  (Claude Code · Opus 5.5, x5, "
+             "verified by deepseek-flash)",
+        loader="terminal",
+        prompts="terminalbench4",
+        criteria=["specification", "evidence", "completion"],
+        cache="cache/cache_terminal_bench_4.0_cc_opus55_deepseek.json",
+        results="results/terminal_bench_4.0_cc_opus55_deepseek.txt",
+        data={"agent_dir":
+              "data/terminal_bench_4.0_trajs/claude-code_opus-5.5"},
+        n_evaluations=2,
+        max_workers=2000,
+    ),
     "swe_bench": Benchmark(
         name="SWE-BENCH VERIFIED  (mini-swe-agent, x3)",
         loader="swe",
