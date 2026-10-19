@@ -5,6 +5,8 @@
 - **Weighted criterion decomposition.** `select` and `compare` accept a complete
   `criterion_weights` mapping, and the new `swe_bench_logic` benchmark provides
   a fairly weighted L1–L6 ablation for Issue #1 with a separate score cache.
+  Relative-weight aggregation rescales before summation to avoid overflow
+  and underflow with very large or subnormal finite positive weights.
 - **`dev` extra.** `pip install "llm-verifier[dev]"` pulls in pytest, the
   only dependency the test suite needs.
 

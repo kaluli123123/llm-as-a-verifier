@@ -52,6 +52,24 @@ def test_weighted_directed_reward_preserves_macro_weight():
     ) == (0.75, 0.25)
 
 
+@pytest.mark.parametrize("weight", [1e308, 5e-324])
+def test_directed_reward_is_stable_for_extreme_relative_weights(weight):
+    weights = {"root": weight, "logic": weight}
+    scores = {
+        cache_key(cid, "task", 0, 1, rep): {
+            "score_A": 0.75,
+            "score_B": 0.25,
+        }
+        for cid in weights
+        for rep in range(2)
+    }
+
+    assert directed_reward(
+        scores, "task", 0, 1, list(weights), 2, weights
+    ) == (0.75, 0.25)
+    assert weights == {"root": weight, "logic": weight}
+
+
 def test_unweighted_directed_reward_keeps_equal_average():
     scores = {
         cache_key("root", "task", 0, 1, 0): {
@@ -130,6 +148,24 @@ def test_compare_applies_criterion_weights(monkeypatch):
         criteria=criteria,
         client=object(),
     ) == (0.5, 0.5)
+
+
+@pytest.mark.parametrize("weight", [1e308, 5e-324])
+def test_compare_is_stable_for_extreme_relative_weights(monkeypatch, weight):
+    monkeypatch.setattr(
+        llm_verifier, "score_pair_criterion", lambda *_args: (0.75, 0.25)
+    )
+    criteria = [
+        {"id": "root", "name": "Root", "description": "root"},
+        {"id": "logic", "name": "Logic", "description": "logic"},
+    ]
+    weights = {"root": weight, "logic": weight}
+
+    assert llm_verifier.compare(
+        "problem", "A", "B", criteria=criteria, client=object(),
+        criterion_weights=weights, n_evaluations=2,
+    ) == (0.75, 0.25)
+    assert weights == {"root": weight, "logic": weight}
 
 
 def test_swe_bench_logic_preserves_three_macro_weights():

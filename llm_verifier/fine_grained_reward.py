@@ -837,8 +837,9 @@ def directed_reward(scores, task_name, a, b, criteria_ids, n_reps,
 
     sa = sb = 0.0
     total_weight = 0.0
+    weight_exponent = math.frexp(max(criterion_weights.values(), default=1.0))[1]
     for cid in criteria_ids:
-        weight = criterion_weights[cid]
+        weight = math.ldexp(criterion_weights[cid], -weight_exponent)
         for rep in range(n_reps):
             entry = scores.get(cache_key(cid, task_name, a, b, rep), {})
             sa += entry.get("score_A", 0.5) * weight

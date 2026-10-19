@@ -7,6 +7,7 @@ runs use `scripts/run.py`.
 
 from __future__ import annotations
 
+import math
 import os
 import random
 import sys
@@ -291,12 +292,14 @@ def compare(
         r_a = sum(r[0] for r in results) / len(results)
         r_b = sum(r[1] for r in results) / len(results)
     else:
+        weight_exponent = math.frexp(max(resolved_weights.values(), default=1.0))[1]
         total_weight = sum(
-            resolved_weights[crit["id"]] for crit in jobs)
+            math.ldexp(resolved_weights[crit["id"]], -weight_exponent)
+            for crit in jobs)
         r_a = sum(
-            result[0] * resolved_weights[crit["id"]]
+            result[0] * math.ldexp(resolved_weights[crit["id"]], -weight_exponent)
             for crit, result in zip(jobs, results)) / total_weight
         r_b = sum(
-            result[1] * resolved_weights[crit["id"]]
+            result[1] * math.ldexp(resolved_weights[crit["id"]], -weight_exponent)
             for crit, result in zip(jobs, results)) / total_weight
     return r_a, r_b
