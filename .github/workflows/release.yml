@@ -52,7 +52,8 @@ jobs:
 
       - name: Checksum the artifacts
         working-directory: dist
-        run: sha256sum *.whl *.tar.gz | tee SHA256SUMS
+        # Keep artifact names from being parsed as checksum options.
+        run: sha256sum -- *.whl *.tar.gz | tee SHA256SUMS
 
       - name: Publish the release
         env:
